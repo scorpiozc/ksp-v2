@@ -22,9 +22,12 @@ public class CalcConstant {
 	public static final int MAX_LINE = 100;
 	public static final int MAX_STATION = 10000;
 	private static final boolean PATHOUTPUT = true;
+	private static final boolean DEPARTALPHAON = false;
 
-	public static Map<Integer, String> STATION_DICT = new TreeMap<Integer, String>();
-	public static Map<Integer, String> LINE_DICT = new HashMap<Integer, String>();
+	public static Map<Integer, String> STATION_DICT = new TreeMap<>();
+	public static Map<Integer, String> LINE_DICT = new HashMap<>();
+	public static Map<String, Integer> PARKTIMES = new HashMap<>();
+	public static Map<Integer, Integer> DEPARTINTERVALTIMES = new HashMap<>();
 	public static Station[] STATIONS;
 	public static Line[] LINES;
 }
