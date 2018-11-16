@@ -11,18 +11,18 @@ import java.util.*;
  */
 public class Station implements Comparable<Station> {
 	// the ID and line
-	private int ID;
-	private Track line;
+	private int code;
+	private Line line;
 
 	// the name of the station
 	private String name;
 
 	// the neighbors and the lines they correspond to
 	private TreeSet<Station> neighbors;
-	private TreeMap<Station, Line> lines;
+	private TreeMap<Station, Section> sections;
 
-	public TreeMap<Station, Line> getLines() {
-		return lines;
+	public TreeMap<Station, Section> getSections() {
+		return sections;
 	}
 
 	/**
@@ -39,13 +39,13 @@ public class Station implements Comparable<Station> {
 	 * @param line Line that the station is connected to
 	 * @param name Name of the station
 	 */
-	public Station(int ID, Track line, String name) {
-		this.setID(ID);
+	public Station(int code, Line line, String name) {
+		this.setCode(code);
 		this.setLine(line);
 		this.setName(name);
 
 		neighbors = new TreeSet<Station>();
-		lines = new TreeMap<Station, Line>();
+		sections = new TreeMap<Station, Section>();
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class Station implements Comparable<Station> {
 	 * 
 	 * @param add The connection to add
 	 */
-	public void addConnection(Line add) {
+	public void addSection(Section add) {
 		// check preconditions
 		if (add == null)
 			throw new IllegalArgumentException();
@@ -79,7 +79,7 @@ public class Station implements Comparable<Station> {
 		if (add.getStart() == this) {
 			// if the starting point of the line is this
 			neighbors.add(add.getEnd());
-			lines.put(add.getEnd(), add);
+			sections.put(add.getEnd(), add);
 		} else if (add.getEnd() == this) {
 			return;
 
@@ -106,7 +106,7 @@ public class Station implements Comparable<Station> {
 	 * @param other The station that is connected
 	 * @return The Line that connects the two, null if not connected
 	 */
-	public Line getConnection(Station other) {
+	public Section getSection(Station other) {
 		// checks preconditions
 		if (other == null)
 			throw new IllegalArgumentException();
@@ -116,34 +116,34 @@ public class Station implements Comparable<Station> {
 			return null;
 
 		// return the line
-		return lines.get(other);
+		return sections.get(other);
 	}
 
 	/**
 	 * @return the ID
 	 */
-	public int getID() {
-		return ID;
+	public int getCode() {
+		return code;
 	}
 
 	/**
-	 * @param ID the ID to set
+	 * @param code the ID to set
 	 */
-	public void setID(int iD) {
-		ID = iD;
+	public void setCode(int code) {
+		this.code = code;
 	}
 
 	/**
 	 * @return the line
 	 */
-	public Track getLine() {
+	public Line getLine() {
 		return line;
 	}
 
 	/**
 	 * @param line the line to set
 	 */
-	public void setLine(Track line) {
+	public void setLine(Line line) {
 		this.line = line;
 	}
 
@@ -169,11 +169,11 @@ public class Station implements Comparable<Station> {
 
 		Station other = (Station) o;
 
-		return (other.ID == ID) && (other.line.equals(this.line));
+		return (other.code == code) && (other.line.equals(this.line));
 	}
 
 	@Override
 	public int compareTo(Station s) {
-		return ID - s.ID;
+		return code - s.code;
 	}
 }

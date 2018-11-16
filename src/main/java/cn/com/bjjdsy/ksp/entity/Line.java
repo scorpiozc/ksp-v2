@@ -1,161 +1,72 @@
 package cn.com.bjjdsy.ksp.entity;
 
 /**
- * A short section that connects two stations Can exist strictly inside a
- * station
+ * Used to store the basic information about an entire line
  *
  */
-public class Line {
-	// start and end stations
-	private Station start;
-	private Station end;
-
-	// which Track this is part of
-	private Track track;
-
-	// ID of this section and the direction
-	private int ID;
-	private int dir; // if it's -1 then it's between stations
-
-	// Distance and time for the section
-	private int dist;
-	private int time;
-
-	private double impedance;
-
-	public double getImpedance() {
-		return impedance;
-	}
-
-	public void setImpedance(double impedance) {
-		this.impedance = impedance;
-	}
+public class Line implements Comparable<Line> {
+	// ID and name of the track
+	private int code;
+	private String name;
 
 	/**
-	 * Default constructor
+	 * Constructor for the Track
 	 */
 	public Line() {
-		this(null, null, null, -1, -1, -1, -1, -1);
+		setCode(0);
+		setName("");
 	}
 
 	/**
-	 * Constructor for a line
+	 * Constructor for the Track, given inputs
 	 * 
-	 * @param start Start station
-	 * @param end   End station
-	 * @param track Track this belongs to
-	 * @param ID    ID of this section
-	 * @param dir   Direction of this section
-	 * @param dist  Distance from start to end
-	 * @param time  Time it takes from start to end
+	 * @param _code ID of the track
+	 * @param _name Name of the track
 	 */
-	public Line(Station start, Station end, Track track, int ID, int dir, int dist, int time, double impedance) {
-		this.setStart(start);
-		this.setEnd(end);
-		this.setTrack(track);
-		this.setID(ID);
-		this.setDir(dir);
-		this.setDist(dist);
-		this.setTime(time);
-		this.setImpedance(impedance);
+	public Line(int _code, String _name) {
+		setCode(_code);
+		setName(_name);
 	}
 
 	/**
-	 * @return the start
+	 * Gets the ID of the track
+	 * 
+	 * @return The ID of the track
 	 */
-	public Station getStart() {
-		return start;
+	public int getCode() {
+		return code;
 	}
 
 	/**
-	 * @param start the start to set
+	 * Sets the ID of the track
+	 * 
+	 * @param ID new ID of the track
 	 */
-	public void setStart(Station start) {
-		this.start = start;
+	public void setCode(int code) {
+		this.code = code;
 	}
 
 	/**
-	 * @return the end
+	 * Gets the name of the track
+	 * 
+	 * @return name of the track
 	 */
-	public Station getEnd() {
-		return end;
+	public String getName() {
+		return name;
 	}
 
 	/**
-	 * @param end the end to set
+	 * Sets the name of the track
+	 * 
+	 * @param name new name of the track
 	 */
-	public void setEnd(Station end) {
-		this.end = end;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	/**
-	 * @return the track
-	 */
-	public Track getTrack() {
-		return track;
-	}
-
-	/**
-	 * @param track the track to set
-	 */
-	public void setTrack(Track track) {
-		this.track = track;
-	}
-
-	/**
-	 * @return the iD
-	 */
-	public int getID() {
-		return ID;
-	}
-
-	/**
-	 * @param iD the iD to set
-	 */
-	public void setID(int iD) {
-		ID = iD;
-	}
-
-	/**
-	 * @return the dir
-	 */
-	public int getDir() {
-		return dir;
-	}
-
-	/**
-	 * @param dir the dir to set
-	 */
-	public void setDir(int dir) {
-		this.dir = dir;
-	}
-
-	/**
-	 * @return the dist
-	 */
-	public int getDist() {
-		return dist;
-	}
-
-	/**
-	 * @param dist the dist to set
-	 */
-	public void setDist(int dist) {
-		this.dist = dist;
-	}
-
-	/**
-	 * @return the time
-	 */
-	public int getTime() {
-		return time;
-	}
-
-	/**
-	 * @param time the time to set
-	 */
-	public void setTime(int time) {
-		this.time = time;
+	@Override
+	public int compareTo(Line t) {
+		return code - t.code;
 	}
 
 	@Override
@@ -168,6 +79,6 @@ public class Line {
 		Line other = (Line) o;
 
 		// compare the IDs
-		return other.ID == this.ID;
+		return other.code == this.code;
 	}
 }

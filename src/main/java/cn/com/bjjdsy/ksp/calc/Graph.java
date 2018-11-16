@@ -15,6 +15,11 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
 
+import cn.com.bjjdsy.ksp.entity.Section;
+import cn.com.bjjdsy.ksp.entity.Path;
+import cn.com.bjjdsy.ksp.entity.Station;
+import cn.com.bjjdsy.ksp.entity.Line;
+
 public class Graph {
 	// input filenames, will change later
 	public static final String STATION_INFO = "station_base_info.txt";
@@ -37,7 +42,7 @@ public class Graph {
 	private int stations;
 	private int lines;
 
-	private Track[] tracks;
+	private Line[] tracks;
 	private Station[] stats;
 	private int[] statIDs;
 	private int[] indices;
@@ -55,7 +60,7 @@ public class Graph {
 		stations = 0;
 		lines = 0;
 
-		tracks = new Track[MAXLINES];
+		tracks = new Line[MAXLINES];
 		stats = new Station[MAXSTATION];
 		statIDs = new int[MAXSTATION];
 		indices = new int[MAXSTATION];
@@ -124,7 +129,7 @@ public class Graph {
 	private void genTracks(HashMap<Integer, String> lineNames) {
 		// iterate through the tracks and generate them
 		for (Integer i : lineNames.keySet()) {
-			tracks[i] = new Track(i, lineNames.get(i));
+			tracks[i] = new Line(i, lineNames.get(i));
 		}
 	}
 
@@ -267,9 +272,9 @@ public class Graph {
 			int dir = Integer.parseInt(data[5]);
 
 			// check that the stations are valid
-			if (stats[s1].getLine() != null && stats[s1].getLine().getID() != lineID)
+			if (stats[s1].getLine() != null && stats[s1].getLine().getCode() != lineID)
 				throw new IllegalArgumentException("Input first station is conflicting.");
-			if (stats[s2].getLine() != null && stats[s2].getLine().getID() != lineID)
+			if (stats[s2].getLine() != null && stats[s2].getLine().getCode() != lineID)
 				throw new IllegalArgumentException("Input first station is conflicting.");
 
 			// set the tracks that they are on
@@ -279,10 +284,10 @@ public class Graph {
 			// create a new Line
 			int traveltime = time + (parktimes.get(s1 + "-" + s2) == null ? 0 : parktimes.get(s1 + "-" + s2));
 			double impedance = traveltime;
-			Line connect = new Line(stats[s1], stats[s2], tracks[lineID], lines++, dir, dist, traveltime, impedance);
+			Section connect = new Section(stats[s1], stats[s2], tracks[lineID], lines++, dir, dist, traveltime, impedance);
 //			System.out.printf("s1:%s-s2:%s\n", s1, s2);
-			stats[s1].addConnection(connect);
-			stats[s2].addConnection(connect);
+			stats[s1].addSection(connect);
+			stats[s2].addSection(connect);
 		}
 
 		try {
@@ -345,19 +350,19 @@ public class Graph {
 			// find the start and end station
 			Station startStation = null, endStation = null;
 			for (int code : transferToID.get(tsCode)) {
-				if ((stats[code].getLine().getID()) == start)
+				if ((stats[code].getLine().getCode()) == start)
 					startStation = stats[code];
 			}
 			for (int code : transferToID.get(tsCode)) {
-				if ((stats[code].getLine().getID()) == end)
+				if ((stats[code].getLine().getCode()) == end)
 					endStation = stats[code];
 			}
 
 			// make the new line
 			int traveltime;
 			double impedance;
-			if (specials.get(startStation.getID()) != null
-					&& specials.get(startStation.getID()) == endStation.getID()) {
+			if (specials.get(startStation.getCode()) != null
+					&& specials.get(startStation.getCode()) == endStation.getCode()) {
 				traveltime = 0;
 				impedance = 0;
 			} else {
@@ -365,9 +370,9 @@ public class Graph {
 				impedance = (time + departIntervalTimes.get(end) * (departAlphaOn ? departWeight : 1)) * 1.5;
 			}
 //			System.out.printf("end:%d %d\n", end, departIntervalTimes.get(end));
-			Line connect = new Line(startStation, endStation, null, lines++, -1, 0, traveltime, impedance);
-			startStation.addConnection(connect);
-			endStation.addConnection(connect);
+			Section connect = new Section(startStation, endStation, null, lines++, -1, 0, traveltime, impedance);
+			startStation.addSection(connect);
+			endStation.addSection(connect);
 		}
 
 		try {
@@ -549,7 +554,7 @@ public class Graph {
 	 */
 	private void multiDijkstra(int start, int number, PrintWriter fout) {
 
-		ArrayList<Line> lines = new ArrayList<>();
+		ArrayList<Section> lines = new ArrayList<>();
 		// set up the source
 		Station source = stats[statIDs[start]];
 
@@ -572,8 +577,8 @@ public class Graph {
 
 			// get the best path and last station Prev
 			Path best = enqueue.poll();
-			Station last = best.getEnd();
-			int end = indices[last.getID()];
+			Station last = best.getEndStation();
+			int end = indices[last.getCode()];
 
 			if (pathCounts[start][end] == 1) {
 //				fout.printf("K==1 start,%d,end,%d\n", start, end);
@@ -597,13 +602,13 @@ public class Graph {
 			int time = 0;
 			double impedance = 0;
 			if (best.getStations().size() > 2) {// skip start when its transfer
-				Station prev = best.getPrev(last);
-				if (prev.getConnection(last).getDir() == -1) {
+				Station prev = best.getPrevStation(last);
+				if (prev.getSection(last).getDirection() == -1) {
 					isTrans = true;
 
-					time = prev.getConnection(last).getTime();
-					best.setDist(best.getDist() + time);
-					impedance = prev.getConnection(last).getImpedance();
+					time = prev.getSection(last).getTime();
+					best.setTime(best.getTime() + time);
+					impedance = prev.getSection(last).getImpedance();
 					best.setImpedance(best.getImpedance() + impedance);
 //					paths[start][end][pathCounts[start][end]++] = tPath;
 				} else {
@@ -633,27 +638,27 @@ public class Graph {
 				// create the new path
 				Path newPath = new Path(best);
 
-				Line connect = last.getConnection(next);
+				Section connect = last.getSection(next);
 				// ---
-				if (connect.getDir() == -1 && isTrans) {
+				if (connect.getDirection() == -1 && isTrans) {
 					
-					newPath.setDist(newPath.getDist() - time);
+					newPath.setTime(newPath.getTime() - time);
 					newPath.setImpedance(newPath.getImpedance() - impedance);
 					continue;
 				}
 				// ---
 
 				//
-				int before = newPath.getDist();
-				if (connect.getDir() == -1) {
+				int before = newPath.getTime();
+				if (connect.getDirection() == -1) {
 					// System.out.println(connect.getStart().getID() + "-" +
 					// connect.getEnd().getID());
 				} else {
-					newPath.addDist(connect.getTime());
+					newPath.addTime(connect.getTime());
 					newPath.addImpedance(connect.getImpedance());
 				}
 				newPath.addStation(next, connect);
-				int after = newPath.getDist();
+				int after = newPath.getTime();
 				if (before == after) {
 //					System.out.println(before + "-" + after);
 				}
@@ -701,20 +706,20 @@ public class Graph {
 						for (int i = 0; i < pathCounts[start][end]; ++i) {
 							Path cur = paths[start][end][i];
 							ArrayList<Station> stations = cur.getStations();
-							ArrayList<Line> lines = cur.getLines();
+							ArrayList<Section> lines = cur.getSections();
 
 							List<Integer> tList = new ArrayList<>();
 							// fout.printf("Path %d: %d seconds\n", i + 1, cur.getDist());
 							for (int j = 0; j < lines.size(); ++j) {
 
 								// adjust time when OorD is transfer
-								if (j == 0 && lines.get(0).getDir() == -1) {
+								if (j == 0 && lines.get(0).getDirection() == -1) {
 									int time = lines.get(0).getTime();
 //									cur.setDist(cur.getDist() - time);
 									double impedance = lines.get(0).getImpedance();
 //									cur.setImpedance(cur.getImpedance() - impedance);
 								}
-								if (j == lines.size() - 1 && lines.get(lines.size() - 1).getDir() == -1) {
+								if (j == lines.size() - 1 && lines.get(lines.size() - 1).getDirection() == -1) {
 									int time = lines.get(lines.size() - 1).getTime();
 //									cur.setDist(cur.getDist() - time);
 									double impedance = lines.get(lines.size() - 1).getImpedance();
@@ -723,7 +728,7 @@ public class Graph {
 
 								// adjust end
 
-								if (lines.get(j).getDir() == -1) {
+								if (lines.get(j).getDirection() == -1) {
 //									fout.printf("Walk to ");
 									if (j != 0 && j != lines.size() - 1) {
 										// routeLineCode.append(lines.get(j).getStart().getLine().getID() + "-");
@@ -737,19 +742,19 @@ public class Graph {
 //
 //								fout.printf("%d (%s)\n", stations.get(j + 1).getID(), stations.get(j + 1).getName());
 
-								routeStationCode.append(stations.get(j).getID() + "-");
+								routeStationCode.append(stations.get(j).getCode() + "-");
 							}
-							routeStationCode.append(stations.get(lines.size()).getID());
+							routeStationCode.append(stations.get(lines.size()).getCode());
 							if (tList.isEmpty()) {
-								routeLineCode.append(stations.get(lines.size()).getLine().getID());
+								routeLineCode.append(stations.get(lines.size()).getLine().getCode());
 							} else {
 								for (int t : tList) {
-									routeLineCode.append(lines.get(t).getStart().getLine().getID() + "-");
+									routeLineCode.append(lines.get(t).getStart().getLine().getCode() + "-");
 								}
-								routeLineCode.append(stations.get(tList.get(tList.size() - 1) + 1).getLine().getID());
+								routeLineCode.append(stations.get(tList.get(tList.size() - 1) + 1).getLine().getCode());
 							}
 							fout.printf("%s,%s,%d,%s,%s,%d,%.2f\n", statIDs[start], statIDs[end], i + 1, routeLineCode,
-									routeStationCode, cur.getDist(), cur.getImpedance() / 60);
+									routeStationCode, cur.getTime(), cur.getImpedance() / 60);
 							routeStationCode.setLength(0);
 							routeLineCode.setLength(0);
 						}
@@ -798,19 +803,19 @@ public class Graph {
 			for (int i = 0; i < pathCounts[start][end]; ++i) {
 				Path cur = paths[start][end][i];
 				ArrayList<Station> stations = cur.getStations();
-				ArrayList<Line> lines = cur.getLines();
+				ArrayList<Section> lines = cur.getSections();
 
 //				fout.printf("Path %d: %d seconds\n", i + 1, cur.getDist());
 
 				for (int j = 0; j < lines.size(); ++j) {
 					// adjust time when OorD is transfer
-					if (j == 0 && lines.get(0).getDir() == -1) {
+					if (j == 0 && lines.get(0).getDirection() == -1) {
 						int time = lines.get(0).getTime();
 //						cur.setDist(cur.getDist() - time);
 						double impedance = lines.get(0).getImpedance();
 //						cur.setImpedance(cur.getImpedance() - impedance);
 					}
-					if (j == lines.size() - 1 && lines.get(lines.size() - 1).getDir() == -1) {
+					if (j == lines.size() - 1 && lines.get(lines.size() - 1).getDirection() == -1) {
 						int time = lines.get(lines.size() - 1).getTime();
 						// cur.setDist(cur.getDist() - time);
 						double impedance = lines.get(lines.size() - 1).getImpedance();
@@ -823,7 +828,7 @@ public class Graph {
 				List<Integer> tList = new ArrayList<>();
 				for (int j = 0; j < lines.size(); ++j) {
 
-					if (lines.get(j).getDir() == -1) {
+					if (lines.get(j).getDirection() == -1) {
 //						fout.printf("Walk to ");
 						if (j != 0 && j != lines.size() - 1) {
 							// routeLineCode.append(lines.get(j).getStart().getLine().getID() + "-");
@@ -837,21 +842,21 @@ public class Graph {
 
 //					fout.printf("%d (%s)\n", stations.get(j + 1).getID(), stations.get(j + 1).getName());
 
-					routeStationCode.append(stations.get(j).getID() + "-");
+					routeStationCode.append(stations.get(j).getCode() + "-");
 				}
-				routeStationCode.append(stations.get(lines.size()).getID());
+				routeStationCode.append(stations.get(lines.size()).getCode());
 
 				if (tList.isEmpty()) {
-					routeLineCode.append(stations.get(lines.size()).getLine().getID());
+					routeLineCode.append(stations.get(lines.size()).getLine().getCode());
 				} else {
 					for (int t : tList) {
-						routeLineCode.append(lines.get(t).getStart().getLine().getID() + "-");
+						routeLineCode.append(lines.get(t).getStart().getLine().getCode() + "-");
 					}
-					routeLineCode.append(stations.get(tList.get(tList.size() - 1) + 1).getLine().getID());
+					routeLineCode.append(stations.get(tList.get(tList.size() - 1) + 1).getLine().getCode());
 				}
 
 				fout.printf("%s,%s,%d,%s,%s,%d,%.2f\n", statIDs[start], statIDs[end], i + 1, routeLineCode,
-						routeStationCode, cur.getDist(), cur.getImpedance() / 60);
+						routeStationCode, cur.getTime(), cur.getImpedance() / 60);
 				routeStationCode.setLength(0);
 				routeLineCode.setLength(0);
 			}

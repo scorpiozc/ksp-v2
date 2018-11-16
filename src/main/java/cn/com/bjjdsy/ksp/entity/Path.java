@@ -4,11 +4,11 @@ import java.util.*;
 
 public class Path implements Comparable<Path> {
 	private ArrayList<Station> stations;
-	private ArrayList<Line> lines;
-	private int dist;
+	private ArrayList<Section> sections;
+	private int time;
 
-	public void setDist(int dist) {
-		this.dist = dist;
+	public void setTime(int time) {
+		this.time = time;
 	}
 
 	private double impedance;
@@ -29,10 +29,10 @@ public class Path implements Comparable<Path> {
 	 * Default constructor
 	 */
 	public Path() {
-		dist = 0;
+		time = 0;
 		impedance = 0;
 		stations = new ArrayList<Station>();
-		lines = new ArrayList<Line>();
+		sections = new ArrayList<Section>();
 	}
 
 	/**
@@ -41,14 +41,14 @@ public class Path implements Comparable<Path> {
 	 * @param Path to be copied from
 	 */
 	public Path(Path p) {
-		dist = p.dist;
+		time = p.time;
 		impedance = p.impedance;
 		stations = new ArrayList<Station>();
-		lines = new ArrayList<Line>();
+		sections = new ArrayList<Section>();
 		for (Station s : p.stations)
 			stations.add(s);
-		for (Line l : p.lines)
-			lines.add(l);
+		for (Section l : p.sections)
+			sections.add(l);
 	}
 
 	/**
@@ -67,10 +67,10 @@ public class Path implements Comparable<Path> {
 	/**
 	 * Add a station
 	 * 
-	 * @param add  Station to be added
-	 * @param line Line that connects this station to the previous station
+	 * @param add     Station to be added
+	 * @param section Line that connects this station to the previous station
 	 */
-	public void addStation(Station add, Line line) {
+	public void addStation(Station add, Section section) {
 		if (add == null)
 			throw new IllegalArgumentException();
 
@@ -83,7 +83,7 @@ public class Path implements Comparable<Path> {
 //
 		// add the station
 		stations.add(add);
-		lines.add(line);
+		sections.add(section);
 //		return false;
 	}
 
@@ -99,8 +99,8 @@ public class Path implements Comparable<Path> {
 	 * 
 	 * @return The lines in the path
 	 */
-	public ArrayList<Line> getLines() {
-		return lines;
+	public ArrayList<Section> getSections() {
+		return sections;
 	}
 
 	/**
@@ -110,14 +110,14 @@ public class Path implements Comparable<Path> {
 	 * 
 	 * @return The end station
 	 */
-	public Station getEnd() {
+	public Station getEndStation() {
 		if (stations.size() == 0)
 			throw new IllegalArgumentException();
 
 		return stations.get(stations.size() - 1);
 	}
 
-	public Station getPrev(Station s) {
+	public Station getPrevStation(Station s) {
 		int idx = stations.indexOf(s);
 		return stations.get(idx - 1);
 	}
@@ -127,16 +127,16 @@ public class Path implements Comparable<Path> {
 	 * 
 	 * @param add distance to be added
 	 */
-	public void addDist(int add) {
-		dist += add;
+	public void addTime(int time) {
+		time += time;
 	}
 
 	/**
 	 * 
 	 * @return Distance of the path
 	 */
-	public int getDist() {
-		return dist;
+	public int getTime() {
+		return time;
 	}
 
 	@Override
@@ -163,7 +163,7 @@ public class Path implements Comparable<Path> {
 		Path other = (Path) o;
 
 		// compare the dist
-		if (other.dist != dist)
+		if (other.time != time)
 			return false;
 
 		// compare the number of stations
